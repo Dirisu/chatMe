@@ -16,7 +16,7 @@ class WelcomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        chatTitle.text = "CHATMe"
+        chatTitle.text = K.appName
         
         // create chat label animation using loops
 //        chatTitle.text = ""
