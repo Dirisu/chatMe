@@ -18,11 +18,7 @@ class ChatViewController: UIViewController {
     
     let db = Firestore.firestore()
     
-    var messages: [Message] = [
-        Message(sender: "12.com", body: "hello"),
-        Message(sender: "13.com", body: "hello"),
-        Message(sender: "14.com", body: "hello here")
-    ]
+    var messages: [Message] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,10 +28,69 @@ class ChatViewController: UIViewController {
         navigationItem.hidesBackButton = true
         
         tableView.register(UINib(nibName: K.cellNibName, bundle: nil), forCellReuseIdentifier: K.cellIdentifier)
+        
+        loadMessages()
+    }
+    
+    // retrive data from firestore
+    func loadMessages() {
+        // sets the data to an empty array
+//        messages = []
+        
+        // get document from firestore
+//        db.collection(K.FStore.collectionName).getDocuments { querySnapshot, error in
+            
+        // get document from firestore, sorts order and listen to update from firestore
+        db.collection(K.FStore.collectionName)
+            .order(by: K.FStore.dateField)
+            .addSnapshotListener { querySnapshot, error in
+            
+            self.messages = []
+            
+            if let e = error {
+                print("error fetching data from firestore\(e)")
+            } else {
+                
+                if let snapshotDocument = querySnapshot?.documents {
+                    for doc in snapshotDocument {
+                        // data retives all fields in the document as a dictionary
+                        let data = doc.data()
+                        
+                        // type cast the data as String
+                        if let messageSender = data[K.FStore.senderField] as? String, let messageBody = data[K.FStore.bodyField] as? String {
+                            let newMessage = Message(sender: messageSender, body: messageBody)
+                            
+                            // add newMessage to the message array
+                            self.messages.append(newMessage)
+                            
+                            // reloads tableavaiew in the main queue to populate message cells
+                            DispatchQueue.main.async {
+                                self.tableView.reloadData()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @IBAction func sendButton(_ sender: UIButton) {
-        if let messageBody = chatTextField.text, let messageSender = Auth.auth().currentUser?.email
+        
+        // firebase data storage -- message body and sender email
+        if let messageBody = chatTextField.text, let messageSender = Auth.auth().currentUser?.email {
+            
+            db.collection(K.FStore.collectionName).addDocument(data: [
+                K.FStore.senderField : messageSender,
+                K.FStore.bodyField : messageBody,
+                K.FStore.dateField : Date().timeIntervalSince1970]) { error in
+                if let e = error {
+                    print("Issue saving file to firestore \(e)")
+                }
+                else {
+                    print("Successfully saved data")
+                }
+            }
+        }
     }
     
     @IBAction func logoutButton(_ sender: UIBarButtonItem) {

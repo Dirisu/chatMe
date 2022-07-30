@@ -21,20 +21,8 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
     }
-
-//    @IBAction func loginPressed(_ sender: UIButton) {
-//        if let email = emailUserField.text, let password = passwordUserField.text {
-//
-//            Auth.auth().signIn(withEmail: email, password: password) {  authResult, error in
-//
-//                if let e = error {
-//                    print(e)
-//                } else {
-//                    self.performSegue(withIdentifier: "LoginToChat", sender: self)
-//                }
-//            }
-//        }
-//    }
+    
+    
     @IBAction func loginButton(_ sender: UIButton) {
         if let email = emailUserField.text, let password = passwordUserField.text {
             
