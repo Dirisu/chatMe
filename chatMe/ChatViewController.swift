@@ -12,7 +12,7 @@ import FirebaseAuth
 import FirebaseFirestore
 
 class ChatViewController: UIViewController {
-
+    
     @IBOutlet weak var chatTextField: UITextField!
     @IBOutlet weak var tableView: UITableView!
     
@@ -35,45 +35,50 @@ class ChatViewController: UIViewController {
     // retrive data from firestore
     func loadMessages() {
         // sets the data to an empty array
-//        messages = []
+        //        messages = []
         
         // get document from firestore
-//        db.collection(K.FStore.collectionName).getDocuments { querySnapshot, error in
-            
+        //        db.collection(K.FStore.collectionName).getDocuments { querySnapshot, error in
+        
         // get document from firestore, sorts order and listen to update from firestore
         db.collection(K.FStore.collectionName)
             .order(by: K.FStore.dateField)
             .addSnapshotListener { querySnapshot, error in
-            
-            self.messages = []
-            
-            if let e = error {
-                print("error fetching data from firestore\(e)")
-            } else {
                 
-                if let snapshotDocument = querySnapshot?.documents {
-                    for doc in snapshotDocument {
-                        // data retives all fields in the document as a dictionary
-                        let data = doc.data()
-                        
-                        // type cast the data as String
-                        if let messageSender = data[K.FStore.senderField] as? String, let messageBody = data[K.FStore.bodyField] as? String {
-                            let newMessage = Message(sender: messageSender, body: messageBody)
+                self.messages = []
+                
+                if let e = error {
+                    print("error fetching data from firestore\(e)")
+                } else {
+                    
+                    if let snapshotDocument = querySnapshot?.documents {
+                        for doc in snapshotDocument {
+                            // data retives all fields in the document as a dictionary
+                            let data = doc.data()
                             
-                            // add newMessage to the message array
-                            self.messages.append(newMessage)
-                            
-                            // reloads tableavaiew in the main queue to populate message cells
-                            DispatchQueue.main.async {
-                                self.tableView.reloadData()
+                            // type cast the data as String
+                            if let messageSender = data[K.FStore.senderField] as? String, let messageBody = data[K.FStore.bodyField] as? String {
+                                let newMessage = Message(sender: messageSender, body: messageBody)
+                                
+                                // add newMessage to the message array
+                                self.messages.append(newMessage)
+                                
+                                // reloads tableavaiew in the main queue to populate message cells
+                                DispatchQueue.main.async {
+                                    self.tableView.reloadData()
+                                    
+                                    //scroll to the last message
+                                    let index = IndexPath(row: self.messages.count - 1, section: 0)
+                                    self.tableView.scrollToRow(at: index, at: .top, animated: true)
+                                    
+                                }
                             }
                         }
                     }
                 }
             }
-        }
     }
-
+    
     @IBAction func sendButton(_ sender: UIButton) {
         
         // firebase data storage -- message body and sender email
@@ -83,32 +88,34 @@ class ChatViewController: UIViewController {
                 K.FStore.senderField : messageSender,
                 K.FStore.bodyField : messageBody,
                 K.FStore.dateField : Date().timeIntervalSince1970]) { error in
-                if let e = error {
-                    print("Issue saving file to firestore \(e)")
+                    if let e = error {
+                        print("Issue saving file to firestore \(e)")
+                    }
+                    else {
+                        print("Successfully saved data")
+                        
+                        DispatchQueue.main.async {
+                            self.chatTextField.text = ""
+                        }
+                    }
                 }
-                else {
-                    print("Successfully saved data")
-                }
-            }
         }
     }
     
     @IBAction func logoutButton(_ sender: UIBarButtonItem) {
         
         let firebaseAuth = Auth.auth()
-    do {
-        navigationController?.popToRootViewController(animated: true)
-        try firebaseAuth.signOut()
-    } catch let signOutError as NSError {
-        print("Error signing out: %@", signOutError)
+        do {
+            navigationController?.popToRootViewController(animated: true)
+            try firebaseAuth.signOut()
+        } catch let signOutError as NSError {
+            print("Error signing out: %@", signOutError)
+        }
+        
     }
-      
-    }
-    
-    
 }
 
-extension ChatViewController: UITableViewDataSource {
+extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
@@ -116,17 +123,30 @@ extension ChatViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
+        let message = messages[indexPath.row]
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: K.cellIdentifier, for: indexPath) as! MessageCell
-        cell.label.text = messages[indexPath.row].body
+        cell.label.text = message.body
+        
+        if message.sender == Auth.auth().currentUser?.email {
+            cell.leftImageView.isHidden = true
+            cell.rightImageView.isHidden = false
+            cell.messageBubble.backgroundColor = UIColor(named: K.BrandColors.lightPurple)
+            cell.label.textColor = UIColor(named: K.BrandColors.purple)
+        } else {
+            cell.leftImageView.isHidden = false
+            cell.rightImageView.isHidden = true
+            cell.messageBubble.backgroundColor = UIColor(named: K.BrandColors.purple)
+            cell.label.textColor = UIColor(named: K.BrandColors.lightPurple)
+        }
+        
+        
         
         return cell
     }
- 
-}
-
-extension ChatViewController : UITableViewDelegate {
     
 }
+
 
 
 

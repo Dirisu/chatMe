@@ -13,6 +13,10 @@ class WelcomeViewController: UIViewController {
 
     @IBOutlet weak var chatTitle: CLTypingLabel!
     
+//    override func viewWillAppear(_ animated: Bool) {
+//        navigationController?.isNavigationBarHidden = true
+//    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
